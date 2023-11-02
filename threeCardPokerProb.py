@@ -28,3 +28,11 @@ def isHighCard(hand):
 
 
 
+# Test the functions
+hand = ["2 of Hearts", "3 of Hearts", "4 of Hearts"]
+print("Straight Flush:", isStraightFlush(hand))
+print("Three of a Kind:", isThreeOfAKind(hand))
+print("Straight:", isStraight(hand))
+print("Flush:", isFlush(hand))
+print("Pair:", isPair(hand))
+print("High Card:", isHighCard(hand))
