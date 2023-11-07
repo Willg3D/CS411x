@@ -108,8 +108,8 @@ def isFlush(hand):
 # 2 cards in the same rank
 def isPair(hand):
     for rank in ranks:
-        threeOfAKind = [f'{rank} of {suit}' for suit in suits]
-        if sum(card in hand for card in threeOfAKind) == 2:
+        pair = [f'{rank} of {suit}' for suit in suits]
+        if sum(card in hand for card in pair) == 2:
             return True
     return False
 
