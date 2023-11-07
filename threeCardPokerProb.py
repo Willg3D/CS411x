@@ -62,11 +62,10 @@ def isSameRank(hand):
     else:
         return False
 
-def isConsecutiveRank(hand): # must provide sorted list
+def isConsecutiveRank(hand): # must provide sorted list and only works with size 3 hand
     rankValues = {rank: index for index, rank in enumerate(ranks)}
     rankIndices = [rankValues[card.split()[0]] for card in hand]
     return rankIndices[2] - rankIndices[0] == 2 and rankIndices[1] - rankIndices[0] == 1
-
 
 
 ###################################
