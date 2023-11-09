@@ -12,7 +12,7 @@ ranks = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', '
 
 costPerAttempt = 1
 
-# Initialize a dictionary to store the payouts for each hand
+# Dictionary to store the payouts for each hand type
 handPayouts = {
     'Straight Flush': 100,
     'Three of a Kind': 30,
@@ -22,7 +22,7 @@ handPayouts = {
     'High Card': 0,
 }
 
-# Initialize a dictionary to store the probabilities for each hand
+# Initialize a dictionary to store the probabilities for each hand type
 handProbabilities = {    
     'Straight Flush': 0,
     'Three of a Kind': 0,
@@ -31,7 +31,7 @@ handProbabilities = {
     'Pair': 0,
     'High Card': 0,
 }
-# Initialize a dictionary to store the returns for each hand
+# Initialize a dictionary to store the returns for each hand type
 handReturns = {    
     'Straight Flush': 0,
     'Three of a Kind': 0,
@@ -72,10 +72,14 @@ def isConsecutiveRank(hand): # must provide sorted list and only works with size
 ## Boolean Poker Hands Functions ##
 ###################################
 
-# 3 cards in same suit with consecutively increasing ranks (A,Q,K NOT acceptable)
+# 3 cards in same suit with consecutively increasing ranks (A,Q,K acceptable)
 def isStraightFlush(hand):
     if isSameSuit(hand) and isConsecutiveRank(hand):
         return True
+    elif isSameSuit(hand):
+            handRanks = [card.split()[0] for card in hand]  # Extract first word (ranks) from the hand
+            if {'Ace', 'King', 'Queen'}.issubset(handRanks):
+                return True
     else:
         return False
 
@@ -123,7 +127,7 @@ print('Calculating...\n')
 deck = [rank + ' of ' + suit for rank in ranks for suit in suits]
 possibleHands = list(itertools.combinations(deck, 3))
 
-# Calculate the probabilities for each hand
+# Calculate the amount each hand type appears
 for hand in possibleHands:
     hand = sortHand(hand)
 
