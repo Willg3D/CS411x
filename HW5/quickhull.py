@@ -8,9 +8,25 @@ from tkinter.simpledialog import askinteger  # askinteger from tkinter for dialo
 
 import numpy as np # used for generating random points
 
-def plotRandomPoints(numPoints):
-    #np.random.seed(0)
-    points = np.random.rand(numPoints, 2) # generates points (x,y) from 0 to 1
+
+
+
+def quickHull(points):
+
+    #finding left (a) and right (b) most points
+    a = min(points, key=lambda point: point[0])
+    b = max(points, key=lambda point: point[0])
+
+    convexHull = [a, b]
+
+
+    return convexHull
+
+# Recursive helper function to find points on the convex hull
+def recursiveHull(a, b, convexHull, points):
+    pass
+
+def plotRandomPoints(points):
     
     plt.scatter(points[:, 0], points[:, 1], color='blue')
     plt.title(f'Random Generated Points - {numPoints} points')
@@ -19,9 +35,12 @@ def plotRandomPoints(numPoints):
     plt.show()
 
 while(True):
-    numPoints = askinteger("Input", "Enter the number of points (Positive Ints Only):")
+    numPoints = askinteger("Input", "Enter the number of points (3 or More Positive Ints):")
     if numPoints is None:
         break
-    if numPoints > 0:
-        plotRandomPoints(numPoints)
+    if numPoints > 2:
+        np.random.seed(0)
+        points = np.random.rand(numPoints, 2) # generates points (x,y) from 0 to 1
+        print(quickHull(points))
+        plotRandomPoints(points)
         break
