@@ -9,13 +9,23 @@ from tkinter.simpledialog import askinteger  # askinteger from tkinter for dialo
 import numpy as np # used for generating random points
 
 
-
+# finds if point is on clockwise (right) side or
+# counterclockwise (left) side of a line between points a and b
+# returns 0 if collinear, 1 if clockwise, and 2 if counterclockwise
+def findSidePoint(a, b, c):
+    val = (b[1] - a[1]) * (c[0] - b[0]) - (b[0] - a[0]) * (c[1] - b[1])
+    if val == 0:
+        return 0  # Collinear
+    if val > 0: # clockwise
+        return 1
+    return 2 # counterclockwise
 
 def quickHull(points):
 
     #finding left (a) and right (b) most points
     a = min(points, key=lambda point: point[0])
     b = max(points, key=lambda point: point[0])
+    print("side points: ", [point for point in points if findSidePoint(a, b, point) == 2])
 
     convexHull = [a, b]
 
@@ -34,6 +44,7 @@ def plotRandomPoints(points):
     plt.ylabel('Y-axis')
     plt.show()
 
+
 while(True):
     numPoints = askinteger("Input", "Enter the number of points (3 or More Positive Ints):")
     if numPoints is None:
@@ -41,6 +52,7 @@ while(True):
     if numPoints > 2:
         np.random.seed(0)
         points = np.random.rand(numPoints, 2) # generates points (x,y) from 0 to 1
-        print(quickHull(points))
+        convexhull = quickHull(points)
+        print("quickhull points: ", convexhull)
         plotRandomPoints(points)
         break
