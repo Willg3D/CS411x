@@ -20,21 +20,33 @@ def findSidePoint(a, b, c):
         return 1
     return 2 # counterclockwise
 
+def distanceFromLine(a, b, c):
+    aCoef = b[1] - a[1]
+    bCoef = a[0] - b[0]
+    cCoef = (b[0] - a[0]) * a[1] - (b[1] - a[1]) * a[0]
+    
+    return abs((aCoef*c[0])+(bCoef*c[1])+cCoef) / ((aCoef**2) + (bCoef**2))**0.5
+
 def quickHull(points):
+    # Recursive helper function to find points on the convex hull
+    def recursiveHull(a, b, convexHull, points):
+        if not points:
+            return
 
     #finding left (a) and right (b) most points
     a = min(points, key=lambda point: point[0])
     b = max(points, key=lambda point: point[0])
-    print("side points: ", [point for point in points if findSidePoint(a, b, point) == 2])
+
+    leftSidePoints = [point for point in points if findSidePoint(a, b, point) == 2]
+    recursiveHull()
+    rightSidePoints = [point for point in points if findSidePoint(a, b, point) == 2]
+
 
     convexHull = [a, b]
 
 
     return convexHull
 
-# Recursive helper function to find points on the convex hull
-def recursiveHull(a, b, convexHull, points):
-    pass
 
 def plotRandomPoints(points):
     
