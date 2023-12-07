@@ -79,21 +79,25 @@ def isConsecutiveRank(hand): # must provide sorted list and only works with size
 ###################################
 
 def isRoyalFlush(hand):
-    pass
+    if isSameSuit(hand):
+            handRanks = [card.split()[0] for card in hand]  # Extract first word (ranks) from the hand
+            if {'Ace', 'King', 'Queen'}.issubset(handRanks):
+                return True
 
 # 3 cards in same suit with consecutively increasing ranks (A,Q,K acceptable)
 def isStraightFlush(hand):
     if isSameSuit(hand) and isConsecutiveRank(hand):
         return True
-    elif isSameSuit(hand):
-            handRanks = [card.split()[0] for card in hand]  # Extract first word (ranks) from the hand
-            if {'Ace', 'King', 'Queen'}.issubset(handRanks):
-                return True
     else:
         return False
     
 def isThreeAces(hand):
-    pass
+    handRanks = [card.split()[0] for card in hand]  # Extract first word (ranks) from the hand
+    aceCount = handRanks.count('Ace')
+    if aceCount == 3:
+        return True
+    else:
+        return False
 
 # 3 cards in same ranks (suite does not matter)
 def isThreeOfAKind(hand):
