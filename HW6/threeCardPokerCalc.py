@@ -1,7 +1,8 @@
 # William Glass
 # CS 411x Algorithms
-# HW6 (Updated HW 4)
+# HW6
 # 2023-12-8
+
 
 import itertools # using combinations function
 
@@ -73,6 +74,26 @@ def isConsecutiveRank(hand): # must provide sorted list and only works with size
     rankIndices = [rankValues[card.split()[0]] for card in hand]
     return rankIndices[2] - rankIndices[0] == 2 and rankIndices[1] - rankIndices[0] == 1
 
+def determineHandType(hand):
+    hand = sortHand(hand)
+
+    if isRoyalFlush(hand):
+        return 'Royal Flush'
+    elif isStraightFlush(hand):
+        return 'Straight Flush'
+    elif isThreeAces(hand):
+        return 'Three Aces'
+    elif isThreeOfAKind(hand):
+        return 'Three of a Kind'
+    elif isStraight(hand):
+        return 'Straight'
+    elif isFlush(hand):
+        return 'Flush'
+    elif isPair(hand):
+        return 'Pair'
+    else:
+        return 'High Card'
+
 
 ###################################
 ## Boolean Poker Hands Functions ##
@@ -137,61 +158,5 @@ def isPair(hand):
 ###################################
 ##     Main Section of Code      ##
 ###################################
-print('Calculating...\n')
 
-# Generate all possible combinations of 3 cards from a standard deck
-deck = [rank + ' of ' + suit for rank in ranks for suit in suits]
-possibleHands = list(itertools.combinations(deck, 3))
-
-# Calculate the amount each hand type appears
-for hand in possibleHands:
-    hand = sortHand(hand)
-
-    if isRoyalFlush(hand):
-        handProbabilities['Royal Flush'] += 1
-    elif isStraightFlush(hand):
-        handProbabilities['Straight Flush'] += 1
-    elif isThreeAces(hand):
-        handProbabilities['Three Aces'] += 1
-    elif isThreeOfAKind(hand):
-        handProbabilities['Three of a Kind'] += 1
-    elif isStraight(hand):
-        handProbabilities['Straight'] += 1
-    elif isFlush(hand):
-        handProbabilities['Flush'] += 1
-    elif isPair(hand):
-        handProbabilities['Pair'] += 1
-    else:
-        handProbabilities['High Card'] += 1
-
-totalHands = len(possibleHands)
-
-# Calculate the probabilities
-for handType in handProbabilities:
-    handProbabilities[handType] /= totalHands
-
-# Calculate the expected returns for each hand type
-for handType in handProbabilities:
-    winProbability = handProbabilities[handType]
-    payout = handPayouts[handType]
-    expectedReturn = (winProbability * payout)
-    handReturns[handType] = expectedReturn
-
-# Calculate the total expected return
-totalExpectedReturn = sum(handReturns.values())
-
-## PRINT SECTION OF CODE ##
-
-# Print the probability table
-print('Three Card Poker Probability Table:')
-for handType, probability in handProbabilities.items():
-    print(f'{handType}: {probability*100:.2f}%')
-
-# Print the return table
-print('\nThree Card Poker Return Table:')
-for handType, expectedReturns in handReturns.items():
-    print(f'{handType}: ${expectedReturns:.2f}')
-
-print(f'\nTotal Expected Return: ${totalExpectedReturn:.2f}\n')
-print(f'\nExpected Return After Cost: ${totalExpectedReturn - costPerAttempt:.2f}\n')
 
