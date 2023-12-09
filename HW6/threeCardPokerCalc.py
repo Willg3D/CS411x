@@ -11,7 +11,7 @@ import itertools # using combinations function
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
 ranks = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King']
 
-costPerAttempt = 1
+#costPerAttempt = 1
 
 # Dictionary to store the payouts for each hand type
 handPayouts = {
@@ -22,29 +22,6 @@ handPayouts = {
     'Straight': 15,
     'Flush': 5,
     'Pair': 1,
-    'High Card': 0,
-}
-
-# Initialize a dictionary to store the probabilities for each hand type
-handProbabilities = { 
-    'Royal Flush': 0,   
-    'Straight Flush': 0,
-    'Three Aces': 0,
-    'Three of a Kind': 0,
-    'Straight': 0,
-    'Flush': 0,
-    'Pair': 0,
-    'High Card': 0,
-}
-# Initialize a dictionary to store the returns for each hand type
-handReturns = {  
-    'Royal Flush': 0,  
-    'Straight Flush': 0,
-    'Three Aces': 0,
-    'Three of a Kind': 0,
-    'Straight': 0,
-    'Flush': 0,
-    'Pair': 0,
     'High Card': 0,
 }
 
@@ -93,6 +70,10 @@ def determineHandType(hand):
         return 'Pair'
     else:
         return 'High Card'
+    
+def generateAllPossibleHands():
+    deck = [f'{rank} of {suit}' for suit in suits for rank in ranks]
+    return list(itertools.combinations(deck, 3))
 
 
 ###################################
@@ -156,7 +137,73 @@ def isPair(hand):
 
 
 ###################################
+##   Computing Best Hold Code    ##
+###################################
+
+def calcExpectedValue(hold, remainingDeck):
+    totalValue = 0
+    hold = list(hold) # Ensure hold is a list for concatenation
+
+    # Calculate how many cards need to be drawn
+    holdCount = len(hold)
+    numCardsToDraw = 3 - holdCount
+
+    # Generate all possible combinations of draws from the remaining deck and store them in a list
+    allPossibleDraws = list(itertools.combinations(remainingDeck, numCardsToDraw))
+    possibleDrawsCount = len(allPossibleDraws)
+
+    # Iterate over each possible draw
+    for draw in allPossibleDraws:
+        # Form a new hand by combining the hold with this draw
+        newHand = hold + list(draw)
+
+        handType = determineHandType(newHand)
+        totalValue += handPayouts[handType]
+
+    # Return the average value (expected value) of holding these cards
+    return totalValue / possibleDrawsCount
+
+# Creates the remaining deck based on cards in hand
+def createRemainingDeck(hand):
+    deck = [f'{rank} of {suit}' for suit in suits for rank in ranks]
+    for card in hand:
+        deck.remove(card)
+    return deck
+
+def findBestHold(hand):
+    # holds consists of all hold combinations (redrawing 0,1,2, or 3 cards)
+    holds = [hand] + list(itertools.combinations(hand, 2)) + list(itertools.combinations(hand, 1)) + [()]
+    remainingDeck = createRemainingDeck(hand)
+    bestHold = None
+    maxEv = 0
+
+    for hold in holds:
+        ev = calcExpectedValue(hold, remainingDeck)
+        if ev > maxEv:
+            maxEv = ev
+            bestHold = hold
+
+    return bestHold, maxEv
+
+###################################
 ##     Main Section of Code      ##
 ###################################
 
+sampleHands = [
+    ['Ace of Spades', 'Queen of Hearts', 'King of Hearts'],  # High cards with a potential royal flush
+    ['Ace of Hearts', 'Queen of Hearts', 'King of Hearts'],  # royal flush
+    ['Ace of Spades', 'Ace of Hearts', 'Ace of Diamonds'],  # Three aces
+    ['2 of Clubs', '3 of Diamonds', '4 of Hearts'],  # Straight
+    ['Jack of Spades', 'Jack of Clubs', 'Jack of Hearts'],  # Three of a kind, jacks
+    ['9 of Hearts', '10 of Hearts', 'Jack of Hearts'],  # Flush
+    ['7 of Diamonds', '8 of Diamonds', 'Jack of Diamonds'],  # High cards with a potential flush
+    ['King of Clubs', 'King of Diamonds', 'Queen of Spades'],  # Pair of kings
+    ['Ace of Clubs', '5 of Diamonds', '9 of Spades'],  # No obvious hand
+    ['4 of Clubs', '4 of Spades', '6 of Hearts'],  # Pair of fours
+]
 
+
+# Analyze each sample hand
+for hand in sampleHands:
+    bestHold, bestEv = findBestHold(hand)
+    print(f"Best hold for {hand}: {bestHold} with E[x] = {bestEv:.2f}")
