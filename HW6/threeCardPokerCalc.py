@@ -3,11 +3,11 @@
 # HW6
 # 2023-12-8
 
-
 import itertools # using combinations function
 import multiprocessing
 
-
+numProcesses = 4  # Define the number of parallel processes
+outputLock = multiprocessing.Lock() # Needed to not have prints conflict/collide
 
 ## Standard Deck Suits and Ranks
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
@@ -26,7 +26,6 @@ handPayouts = {
     'Pair': 1,
     'High Card': 0,
 }
-
 
 ###################################
 #####  Card Hands Functions   #####
@@ -86,25 +85,25 @@ def generateRemainingDeck(hand):
         deck.remove(card)
     return deck
 
-
-
 ###################################
 ## Boolean Poker Hands Functions ##
 ###################################
 
+# A,Q,K in same suit
 def isRoyalFlush(hand):
     if isSameSuit(hand):
             handRanks = [card.split()[0] for card in hand]  # Extract first word (ranks) from the hand
             if {'Ace', 'King', 'Queen'}.issubset(handRanks):
                 return True
 
-# 3 cards in same suit with consecutively increasing ranks (A,Q,K acceptable)
+# 3 cards in same suit with consecutively increasing ranks
 def isStraightFlush(hand):
     if isSameSuit(hand) and isConsecutiveRank(hand):
         return True
     else:
         return False
     
+# 3 Aces in any suit
 def isThreeAces(hand):
     handRanks = [card.split()[0] for card in hand]  # Extract first word (ranks) from the hand
     aceCount = handRanks.count('Ace')
@@ -151,6 +150,7 @@ def isPair(hand):
 ##   Expected Value Calculation  ##
 ###################################
 
+# Calculates EV based on current cards holdering in a hand and remaining cards in deck
 def calcExpectedValue(hold, remainingDeck):
     totalValue = 0
     hold = list(hold) # Ensure hold is a list for concatenation
@@ -165,23 +165,14 @@ def calcExpectedValue(hold, remainingDeck):
 
     return totalValue / len(allPossibleDraws)
 
-def calcTotalReturns():
-    totalReturn = 0
-    totalReturnAfterCost = 0
-    allHands = generateAllPossibleHands()
-
-    for hand in allHands:
-        bestHold, bestEv, evDict = findBestHold(hand, noHoldEv)
-        totalReturn += bestEv
-        totalReturnAfterCost += (bestEv - costPerAttempt)
-
-    return totalReturn, totalReturnAfterCost
 
 ###################################
 ##   Computing Best Hold Code    ##
 ###################################
 
+# Calculates best hold and all possible holds with E[x] 
 def findBestHold(hand, noHoldEv):
+    # holds consists of all hold combinations (redrawing 0,1, or 2 cards)
     holds = [tuple(hand)] + list(itertools.combinations(hand, 2)) + list(itertools.combinations(hand, 1))
     remainingDeck = generateRemainingDeck(hand)
     bestHold = None
@@ -202,11 +193,46 @@ def findBestHold(hand, noHoldEv):
 
     return bestHold, maxEv, evDict
 
+###################################
+##       Parallel Functions      ##
+###################################
+
+# Function to analyze a single hand and print results that works with multiproccessing
+def analyzeHand(hand, noHoldEv):
+    bestHold, bestEv, evDict = findBestHold(hand, noHoldEv)
+    with outputLock:
+        print(f"For hand {hand}:")
+        for hold, ev in evDict.items():
+            print(f"    Hold {hold}: E[x] = {ev:.2f}")
+        print(f"    Best hold: {bestHold} with E[x] = {bestEv:.2f}")
+        print(f"    After Cost E[x] = {(bestEv - costPerAttempt):.2f}\n")
+        print("-" * 70)  # Add a separator line to separate the results for each hand
+        print()
+
+# Calculates EV based on current cards holdering in a hand and remaining cards in deck
+# pre-calc noHolds EV also argument to reduce calculations
+# Very similar to calcExpectedValue(), but made to work with multiproccessing
+def calcExpectedValueParallel(args):
+    hold, remainingDeck, noHoldEv = args
+    totalValue = 0
+    hold = list(hold)  # Ensure hold is a list for concatenation
+    holdCount = len(hold)
+    numCardsToDraw = 3 - holdCount
+    allPossibleDraws = list(itertools.combinations(remainingDeck, numCardsToDraw))
+
+    for draw in allPossibleDraws:
+        newHand = hold + list(draw)
+        handType = determineHandType(newHand)
+        totalValue += handPayouts[handType]
+
+    return totalValue / len(allPossibleDraws)
+
 
 ###################################
 ##     Main Section of Code      ##
 ###################################
 if __name__ == "__main__":
+    # Set of "interesting hands"
     sampleHands = [
         ['Ace of Spades', 'Queen of Hearts', 'King of Hearts'],  # High cards with a potential royal flush
         ['Ace of Hearts', 'Queen of Hearts', 'King of Hearts'],  # royal flush
@@ -221,20 +247,32 @@ if __name__ == "__main__":
     ]
 
     # Pre-calculate the expected value for a complete redraw
+    # Done to reduce unnecessary recalculations
     noHoldEv = calcExpectedValue([], generateFullDeck())
 
-    # Analyze each sample hand
-    for hand in sampleHands:
-        bestHold, bestEv, evDict = findBestHold(hand, noHoldEv)
-        print(f"For hand {hand}:")
-        for hold, ev in evDict.items():
-            print(f"    Hold {hold}: E[x] = {ev:.2f}")
-        print(f"    Best hold: {bestHold} with E[x] = {bestEv:.2f}")
-        print(f"    After Cost E[x] = {(bestEv - costPerAttempt):.2f}\n")
+    ### Sample Hand Calc ###
+    print("\nSample Hand Examples:")
+    print("-" * 70)
+    with multiprocessing.Pool(numProcesses) as pool:
+        # Use pool.map to analyze each hand in parallel
+        pool.starmap(analyzeHand, [(hand, noHoldEv) for hand in sampleHands])
 
 
-    # Calculate and display the total returns
-    print(f"Calculating total return for perfect play...")
-    totalReturn, totalReturnAfterCost = calcTotalReturns()
-    print(f"Total return for perfect play: {totalReturn}")
-    print(f"Total return after cost for perfect play: {totalReturnAfterCost}")
+    ### All Possible Hand Total Return ###
+    print("Total Return for Perfect Plays:")
+    print("-" * 70)
+
+    # Generate all possible 3-card combinations
+    allCombinations = generateAllPossibleHands()
+    
+    # Create a pool of worker processes to calculated all EV for every hold combo
+    with multiprocessing.Pool(numProcesses) as pool:
+        expectedValues = [] # list of EV for all possible hands
+        for hold in allCombinations:
+            holdValue = calcExpectedValueParallel((hold, generateFullDeck(), noHoldEv))
+            expectedValues.append(holdValue)
+
+    totalReturn = sum(expectedValues)
+    totalReturnAfterCost = totalReturn - (len(allCombinations) * costPerAttempt)
+    print(f"Total return for perfect play: {totalReturn:.2f}")
+    print(f"Total return after cost for perfect play: {totalReturnAfterCost:.2f}\n")
