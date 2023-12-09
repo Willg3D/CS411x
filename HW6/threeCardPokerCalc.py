@@ -5,6 +5,8 @@
 
 
 import itertools # using combinations function
+import multiprocessing
+
 
 
 ## Standard Deck Suits and Ranks
@@ -204,35 +206,35 @@ def findBestHold(hand, noHoldEv):
 ###################################
 ##     Main Section of Code      ##
 ###################################
+if __name__ == "__main__":
+    sampleHands = [
+        ['Ace of Spades', 'Queen of Hearts', 'King of Hearts'],  # High cards with a potential royal flush
+        ['Ace of Hearts', 'Queen of Hearts', 'King of Hearts'],  # royal flush
+        ['Ace of Spades', 'Ace of Hearts', 'Ace of Diamonds'],  # Three aces
+        ['2 of Clubs', '3 of Diamonds', '4 of Hearts'],  # Straight
+        ['Jack of Spades', 'Jack of Clubs', 'Jack of Hearts'],  # Three of a kind, jacks
+        ['9 of Hearts', '10 of Hearts', 'Jack of Hearts'],  # Flush
+        ['7 of Diamonds', '8 of Diamonds', 'Jack of Diamonds'],  # High cards with a potential flush
+        ['King of Clubs', 'King of Diamonds', 'Queen of Spades'],  # Pair of kings
+        ['Ace of Clubs', '5 of Diamonds', '9 of Spades'],  # No obvious hand
+        ['4 of Clubs', '4 of Spades', '6 of Hearts'],  # Pair of fours
+    ]
 
-sampleHands = [
-    ['Ace of Spades', 'Queen of Hearts', 'King of Hearts'],  # High cards with a potential royal flush
-    ['Ace of Hearts', 'Queen of Hearts', 'King of Hearts'],  # royal flush
-    ['Ace of Spades', 'Ace of Hearts', 'Ace of Diamonds'],  # Three aces
-    ['2 of Clubs', '3 of Diamonds', '4 of Hearts'],  # Straight
-    ['Jack of Spades', 'Jack of Clubs', 'Jack of Hearts'],  # Three of a kind, jacks
-    ['9 of Hearts', '10 of Hearts', 'Jack of Hearts'],  # Flush
-    ['7 of Diamonds', '8 of Diamonds', 'Jack of Diamonds'],  # High cards with a potential flush
-    ['King of Clubs', 'King of Diamonds', 'Queen of Spades'],  # Pair of kings
-    ['Ace of Clubs', '5 of Diamonds', '9 of Spades'],  # No obvious hand
-    ['4 of Clubs', '4 of Spades', '6 of Hearts'],  # Pair of fours
-]
+    # Pre-calculate the expected value for a complete redraw
+    noHoldEv = calcExpectedValue([], generateFullDeck())
 
-# Pre-calculate the expected value for a complete redraw
-noHoldEv = calcExpectedValue([], generateFullDeck())
-
-# Analyze each sample hand
-for hand in sampleHands:
-    bestHold, bestEv, evDict = findBestHold(hand, noHoldEv)
-    print(f"For hand {hand}:")
-    for hold, ev in evDict.items():
-        print(f"    Hold {hold}: E[x] = {ev:.2f}")
-    print(f"    Best hold: {bestHold} with E[x] = {bestEv:.2f}")
-    print(f"    After Cost E[x] = {(bestEv - costPerAttempt):.2f}\n")
+    # Analyze each sample hand
+    for hand in sampleHands:
+        bestHold, bestEv, evDict = findBestHold(hand, noHoldEv)
+        print(f"For hand {hand}:")
+        for hold, ev in evDict.items():
+            print(f"    Hold {hold}: E[x] = {ev:.2f}")
+        print(f"    Best hold: {bestHold} with E[x] = {bestEv:.2f}")
+        print(f"    After Cost E[x] = {(bestEv - costPerAttempt):.2f}\n")
 
 
-# Calculate and display the total returns
-print(f"Calculating total return for perfect play...")
-totalReturn, totalReturnAfterCost = calcTotalReturns()
-print(f"Total return for perfect play: {totalReturn}")
-print(f"Total return after cost for perfect play: {totalReturnAfterCost}")
+    # Calculate and display the total returns
+    print(f"Calculating total return for perfect play...")
+    totalReturn, totalReturnAfterCost = calcTotalReturns()
+    print(f"Total return for perfect play: {totalReturn}")
+    print(f"Total return after cost for perfect play: {totalReturnAfterCost}")
