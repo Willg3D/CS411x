@@ -11,7 +11,7 @@ import itertools # using combinations function
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
 ranks = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King']
 
-#costPerAttempt = 1
+costPerAttempt = 1
 
 # Dictionary to store the payouts for each hand type
 handPayouts = {
@@ -75,6 +75,16 @@ def generateAllPossibleHands():
     deck = [f'{rank} of {suit}' for suit in suits for rank in ranks]
     return list(itertools.combinations(deck, 3))
 
+def generateFullDeck():
+    return [f'{rank} of {suit}' for suit in suits for rank in ranks]
+
+def generateRemainingDeck(hand):
+    deck = [f'{rank} of {suit}' for suit in suits for rank in ranks]
+    for card in hand:
+        deck.remove(card)
+    return deck
+
+
 
 ###################################
 ## Boolean Poker Hands Functions ##
@@ -135,55 +145,61 @@ def isPair(hand):
             return True
     return False
 
-
 ###################################
-##   Computing Best Hold Code    ##
+##   Expected Value Calculation  ##
 ###################################
 
 def calcExpectedValue(hold, remainingDeck):
     totalValue = 0
     hold = list(hold) # Ensure hold is a list for concatenation
-
-    # Calculate how many cards need to be drawn
     holdCount = len(hold)
     numCardsToDraw = 3 - holdCount
-
-    # Generate all possible combinations of draws from the remaining deck and store them in a list
     allPossibleDraws = list(itertools.combinations(remainingDeck, numCardsToDraw))
-    possibleDrawsCount = len(allPossibleDraws)
 
-    # Iterate over each possible draw
     for draw in allPossibleDraws:
-        # Form a new hand by combining the hold with this draw
         newHand = hold + list(draw)
-
         handType = determineHandType(newHand)
         totalValue += handPayouts[handType]
 
-    # Return the average value (expected value) of holding these cards
-    return totalValue / possibleDrawsCount
+    return totalValue / len(allPossibleDraws)
 
-# Creates the remaining deck based on cards in hand
-def createRemainingDeck(hand):
-    deck = [f'{rank} of {suit}' for suit in suits for rank in ranks]
-    for card in hand:
-        deck.remove(card)
-    return deck
+def calcTotalReturns():
+    totalReturn = 0
+    totalReturnAfterCost = 0
+    allHands = generateAllPossibleHands()
 
-def findBestHold(hand):
-    # holds consists of all hold combinations (redrawing 0,1,2, or 3 cards)
-    holds = [hand] + list(itertools.combinations(hand, 2)) + list(itertools.combinations(hand, 1)) + [()]
-    remainingDeck = createRemainingDeck(hand)
+    for hand in allHands:
+        bestHold, bestEv, evDict = findBestHold(hand, noHoldEv)
+        totalReturn += bestEv
+        totalReturnAfterCost += (bestEv - costPerAttempt)
+
+    return totalReturn, totalReturnAfterCost
+
+###################################
+##   Computing Best Hold Code    ##
+###################################
+
+def findBestHold(hand, noHoldEv):
+    holds = [tuple(hand)] + list(itertools.combinations(hand, 2)) + list(itertools.combinations(hand, 1))
+    remainingDeck = generateRemainingDeck(hand)
     bestHold = None
     maxEv = 0
+    evDict = {}  # Dictionary to store expected values for each hold
+
+    evDict[()] = noHoldEv  # Store the expected value for no hold
+    if noHoldEv > maxEv:
+        maxEv = noHoldEv
+        bestHold = ()
 
     for hold in holds:
-        ev = calcExpectedValue(hold, remainingDeck)
+        ev = calcExpectedValue(list(hold), remainingDeck)
+        evDict[hold] = ev
         if ev > maxEv:
             maxEv = ev
             bestHold = hold
 
-    return bestHold, maxEv
+    return bestHold, maxEv, evDict
+
 
 ###################################
 ##     Main Section of Code      ##
@@ -202,8 +218,21 @@ sampleHands = [
     ['4 of Clubs', '4 of Spades', '6 of Hearts'],  # Pair of fours
 ]
 
+# Pre-calculate the expected value for a complete redraw
+noHoldEv = calcExpectedValue([], generateFullDeck())
 
 # Analyze each sample hand
 for hand in sampleHands:
-    bestHold, bestEv = findBestHold(hand)
-    print(f"Best hold for {hand}: {bestHold} with E[x] = {bestEv:.2f}")
+    bestHold, bestEv, evDict = findBestHold(hand, noHoldEv)
+    print(f"For hand {hand}:")
+    for hold, ev in evDict.items():
+        print(f"    Hold {hold}: E[x] = {ev:.2f}")
+    print(f"    Best hold: {bestHold} with E[x] = {bestEv:.2f}")
+    print(f"    After Cost E[x] = {(bestEv - costPerAttempt):.2f}\n")
+
+
+# Calculate and display the total returns
+print(f"Calculating total return for perfect play...")
+totalReturn, totalReturnAfterCost = calcTotalReturns()
+print(f"Total return for perfect play: {totalReturn}")
+print(f"Total return after cost for perfect play: {totalReturnAfterCost}")
